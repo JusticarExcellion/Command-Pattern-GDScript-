@@ -1,0 +1,121 @@
+Read To Understand code:
+
+Alright this code uses the command pattern and this is my interpretation of the command pattern in GDScript.
+
+The main idea of the command pattern is:
+
+	You take an input(this could be from a player or an AI)
+
+	You thingify this input or turn it into an object
+
+	You then create a input handler that handles these 	differnt objects/inputs.
+
+	Then execute the commands associated with the input
+
+The idea is by creating this command structure, you make your inputs very flexible and it helps with creating AI since they can now pass these input objects and have them executed by the games actors.
+
+This all comes a the cost of performance, but with all this upside, there was always bound to be some performance costs in this case of abstraction.
+
+Here's how it functions within GD-Script(This section is also a lot more technical):
+
+For this implementation we use 4 seperate classes(There's a fifth but that's just a test):
+
+1.actor
+2.Command
+3.InputHandler
+4.Jump_Command
+
+I'll explain each and provide a graph to show their relations:
+
+actor: 
+
+Think of actor as our PC or agent, it is the thing that is going to be executing all of the actions we tell it to. But it needs to know what those actions are first.
+
+All of the pieces of actor are going to come together once we understand what the other pieces do. For now all you have to know is that:
+
+1. The actor class extends characterbody3D, you can read about that class in GODOT documentation
+
+2. If the actor is off the ground, gravity will activate and pull it to the ground
+
+3. The actor has a jump function, that if it's on the ground will set it's y velocity to a defined constant jump velocity
+
+
+So we have an actor that knows how to jump and obeys gravity, mostly. But it can't jump, because it doesn't know how to receive input from the user, so that it can jump.
+
+
+Command: 
+
+While Command is not really used, it's important to understand because it provides the base functionality for Jump_command and any other command you want to add. With programming it's important that you understand standard conventions used in any language. I know it sounds weird, but I promise it makes sense. For instance in this particular conetext, think of the relation between a writing utensil, and a pen:
+
+a pen is a writing utensil.
+but a writing utensil cannot be a pen.
+
+All writing utensils, have the ability to write letters, but only pens do it with ink.
+
+These relationships are near exact copies of how it works, with command, and jump_command.
+
+For now though I'll just address command for right now. 
+
+
+Command is a base class, with only 2 functions. The first is a standard constructor, and the 2nd is the execute function which takes 1 parameter, actor, and yes it's that actor class which we created before. But in command this function does nothing. And that's because it's not supposed to. And this will be directly addressed in the next section.
+
+Jump_command:
+
+Jump Command is actually pretty easy to explain, because it extends the command class. Think back to the writing utensil pen example, in this scenario, command is the writing utensil, and Jump_command is the pen. so it has 2 functions, guess what they are, constructor, and execute which still holds  acor parameter. The only real difference is that Jump_Command has stuff inside of it's execute function. actor.jump(), what this does is this tells the actor passed into the function to jump. pretty self explanatory and that's because the actor class already knows how to jump. All Jump_command does is tell it to Jump.
+
+However we still have an issue. Our actor knows how to jump, we just made something to tell our actor to jump. But we still can't do anything, until we tie our Jump_Command to our user inputs. Because otherwise our PC will just sit there, and scream silently, I have functionality but I have no Input.
+
+InputHandler:
+
+Finally, this is how we tie everything together. The steering wheel, so our user can control the car. Now I'll break this down easily, 
+
+The input handler first creates  jump_command object called Jump(Yeah, it's on the nose, sue me), so we can invoke it on the users input. 
+
+Then we have a function, HandleInput(), this is going to look for user input, specifically in this case we're looking to see if the user is pressing the space key and then we return the Jump_command object, jump. I'll get into why in the wrapup section. And if the player is not pressing spacebar, then we return null, I'll also get into why in the wrapup section.
+
+Wrapup:
+
+So how does all of this come together, let's go back to actor to implement everything we just built.
+
+First we need to create a InputHandler object called handle, why? Because we want to call the HandleInput function every single frame. We do this so we can see if the player pressed the spacebar. Yep. That's it, except it's not.
+
+Because in the _process function, we create a new command object, thankfully we don't have to worry about garbage collection because GODOT does that for us, and we call new object "action". Now all we do is check to see if action is null, and if it's not than we invoke the command object's execute function.
+
+And that's it.
+
+It just works.
+
+Yup.
+
+What?
+
+How?
+
+What do you mean, how?
+
+It just works!
+
+Fine...
+
+I'll break down a single frame:
+
+actor looks to see if it's on the ground. It is. Cool.
+
+action object gets instanced, to the result of a HandleInput call.
+
+Handle input checks to see if the user is pressing spacebar. They are, cool. return the Jump_Command object, called jump.
+
+action gets set to the jump object.
+
+actor then checks to see if action is null.
+
+It's not. Cool.
+
+Now call the execute function of the jump_Command class passing itself as the actor parameter, the function wants.
+
+In the jump_Command class, execute says. To call the jump func in the actor class, onto the actor passed to it.
+
+The jump function in actor, says to set the Y velocity of the actor to it's jump velocity, if it's on the ground. It is, so we jump.
+
+And that's it man, we just implemented the command pattern in GODOT.
+
